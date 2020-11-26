@@ -37,7 +37,7 @@ import os
 
 from robot import model
 from robot.conf import RobotSettings
-from robot.model import Keywords
+from robot.model import Keywords, Body
 from robot.output import LOGGER, Output, pyloggingconf
 from robot.utils import seq2str, setter, py3to2
 
@@ -74,16 +74,22 @@ class Keyword(model.Keyword):
 class For(Keyword):
     """Represents a for loop in test data.
 
-    Contains keywords in the loop body as child :attr:`keywords`.
+    Contains keywords in the loop body as child :attr:`body`.
     """
     __slots__ = ['flavor', 'error']
 
     def __init__(self, variables, flavor, values, lineno=None, parent=None, error=None):
         Keyword.__init__(self, assign=variables, args=values, type=Keyword.FOR_LOOP_TYPE,
                          lineno=lineno, parent=parent)
+        self.body = None
         self.keywords = None
         self.flavor = flavor
         self.error = error
+
+    @setter
+    def body(self, keywords):
+        """Child keywords as a :class:`~.Body` object."""
+        return Body(Keyword, self, keywords)
 
     @setter
     def keywords(self, keywords):
@@ -118,14 +124,14 @@ class If(Keyword):
     def __init__(self, condition=None, body=None, orelse=None, lineno=None, error=None,
                  type=Keyword.IF_TYPE):
         Keyword.__init__(self, args=[condition], type=type, lineno=lineno)
-        self.keywords = body    # FIXME: self.keywords -> self.body
+        self.body = body
         self.orelse = orelse
         self.error = error
 
     @setter
-    def keywords(self, keywords):
-        """Child keywords as a :class:`~.Keywords` object."""
-        return Keywords(Keyword, self, keywords)
+    def body(self, keywords):
+        """Child keywords as a :class:`~.Body` object."""
+        return Body(Keyword, self, keywords)
 
     @property
     def condition(self):
@@ -349,13 +355,20 @@ class UserKeyword(object):
         self.tags = tags
         self.return_ = return_ or ()
         self.timeout = timeout
-        self.keywords = []
+        self.body = []
+        self.keywords = None
         self.lineno = lineno
         self.parent = parent
         self._teardown = None
 
     @setter
+    def body(self, keywords):
+        """Child keywords as a :class:`~.Body` object."""
+        return Body(Keyword, self, keywords)
+
+    @setter
     def keywords(self, keywords):
+        """Child keywords as a :class:`~.Keywords` object."""
         return model.Keywords(Keyword, self, keywords)
 
     @property

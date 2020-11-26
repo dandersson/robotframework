@@ -102,8 +102,8 @@ class Keyword(ModelObject):
         """
         if not self.parent:
             return 'k1'
-        if self.parent.keywords:
-            return '%s-k%d' % (self.parent.id, self.parent.keywords.index(self)+1)
+        if hasattr(self.parent, 'body') and self.parent.body:
+            return '%s-k%d' % (self.parent.id, self.parent.body.index(self)+1)
         fixtures = [kw for kw in (self.parent.setup, self.parent.teardown) if kw]
         return '%s-k%d' % (self.parent.id, fixtures.index(self)+1)
 
@@ -179,6 +179,27 @@ class Keywords(ItemList):
         """Iterates over normal keywords, omitting setup and teardown."""
         kws = [kw for kw in self if kw.type not in ('setup', 'teardown')]
         return Keywords(self._item_class, self._common_attrs['parent'], kws)
+
+    def __setitem__(self, index, item):
+        old = self[index]
+        ItemList.__setitem__(self, index, item)
+        self[index]._sort_key = old._sort_key
+
+
+class Body(ItemList):
+    """A list-like object representing body of a suite, a test or a keyword.
+
+    Body contains the keywords and other structures such as for loops.
+    """
+    __slots__ = []
+
+    def __init__(self, keyword_class=Keyword, parent=None, keywords=None):
+        ItemList.__init__(self, keyword_class, {'parent': parent}, keywords)
+
+    @property
+    def all(self):
+        """Iterates over all keywords, including setup and teardown."""
+        return self
 
     def __setitem__(self, index, item):
         old = self[index]

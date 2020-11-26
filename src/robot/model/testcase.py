@@ -17,7 +17,7 @@ from robot.utils import setter
 
 from .fixture import create_fixture
 from .itemlist import ItemList
-from .keyword import Keyword, Keywords
+from .keyword import Keyword, Keywords, Body
 from .modelobject import ModelObject
 from .tags import Tags
 
@@ -37,10 +37,16 @@ class TestCase(ModelObject):
         self.doc = doc          #: Test case documentation.
         self.timeout = timeout  #: Test case timeout.
         self.tags = tags
+        self.body = None
         self.keywords = None
         self.setup = self.keyword_class(parent=self, type=Keyword.SETUP_TYPE)
         self.teardown = self.keyword_class(parent=self,
                                            type=Keyword.TEARDOWN_TYPE)
+
+    @setter
+    def body(self, keywords):
+        """Test case body as a :class:`~.Body` object."""
+        return Body(self.keyword_class, self, keywords)
 
     @setter
     def tags(self, tags):
